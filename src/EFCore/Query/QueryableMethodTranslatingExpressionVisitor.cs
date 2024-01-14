@@ -295,6 +295,10 @@ public abstract class QueryableMethodTranslatingExpressionVisitor : ExpressionVi
                         when genericMethod == QueryableMethods.Distinct:
                         return CheckTranslated(TranslateDistinct(shapedQueryExpression));
 
+                    case nameof(Queryable.DistinctBy)
+                        when genericMethod == QueryableMethods.DistinctBy:
+                        return CheckTranslated(TranslateDistinctBy(shapedQueryExpression, GetLambdaExpressionFromArgument(1)));
+
                     case nameof(Queryable.ElementAt)
                         when genericMethod == QueryableMethods.ElementAt:
                         shapedQueryExpression = shapedQueryExpression.UpdateResultCardinality(ResultCardinality.Single);
@@ -774,6 +778,15 @@ public abstract class QueryableMethodTranslatingExpressionVisitor : ExpressionVi
     /// <param name="source">The shaped query on which the operator is applied.</param>
     /// <returns>The shaped query after translation.</returns>
     protected abstract ShapedQueryExpression? TranslateDistinct(ShapedQueryExpression source);
+
+    /// <summary>
+    ///     Translates <see cref="Queryable.DistinctBy{TSource, TKey}(IQueryable{TSource}, Expression{Func{TSource, TKey}})" /> method
+    ///     over the given source.
+    /// </summary>
+    /// <param name="source">The shaped query on which the operator is applied.</param>
+    /// <param name="keySelector">The key selector supplied in the call.</param>
+    /// <returns>The shaped query after translation.</returns>
+    protected abstract ShapedQueryExpression? TranslateDistinctBy(ShapedQueryExpression source, LambdaExpression keySelector);
 
     /// <summary>
     ///     Translates <see cref="Queryable.ElementAt{TSource}(IQueryable{TSource}, int)" /> method or

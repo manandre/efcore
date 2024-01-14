@@ -664,6 +664,12 @@ public partial class NavigationExpandingExpressionVisitor : ExpressionVisitor
                         when genericMethod == QueryableMethods.DefaultIfEmptyWithoutArgument:
                         return ProcessDefaultIfEmpty(source);
 
+                    case nameof(Queryable.DistinctBy)
+                        when genericMethod == QueryableMethods.DistinctBy:
+                        return ProcessDistinctBy(
+                            source,
+                            methodCallExpression.Arguments[1].UnwrapLambdaFromQuote());
+
                     default:
                         // Aggregate overloads
                         // GroupJoin overloads
@@ -675,7 +681,7 @@ public partial class NavigationExpandingExpressionVisitor : ExpressionVisitor
                         // TakeWhile
                         // DefaultIfEmpty with argument
                         // Index based lambda overloads of Where, SkipWhile, TakeWhile, Select, SelectMany
-                        // IEqualityComparer overloads of Distinct, Contains, Join, Except, Intersect, Union, OrderBy, ThenBy, OrderByDescending, ThenByDescending, GroupBy
+                        // IEqualityComparer overloads of Distinct, DistinctBy, Contains, Join, Except, Intersect, Union, OrderBy, ThenBy, OrderByDescending, ThenByDescending, GroupBy
                         throw new InvalidOperationException(
                             CoreStrings.TranslationFailed(
                                 _reducingExpressionVisitor.Visit(methodCallExpression).Print()));
@@ -1629,6 +1635,22 @@ public partial class NavigationExpandingExpressionVisitor : ExpressionVisitor
             Expression.Call(genericMethod.MakeGenericMethod(groupBySource.SourceElementType), groupBySource.Source, count));
 
         return groupBySource;
+    }
+
+    // This returns Expression since it can also return a deferred GroupBy operation
+    private Expression ProcessDistinctBy(
+        NavigationExpansionExpression source,
+        LambdaExpression keySelector)
+    {
+        var keySelectorBody = ExpandNavigationsForSource(source, RemapLambdaExpression(source, keySelector));
+
+        keySelector = GenerateLambda(keySelectorBody, source.CurrentParameter);
+
+        return Expression.Call(
+            QueryableMethods.DistinctBy.MakeGenericMethod(source.SourceElementType, keySelector.ReturnType),
+            source.Source,
+            Expression.Quote(keySelector));
+        
     }
 
     private GroupByNavigationExpansionExpression ProcessWhere(

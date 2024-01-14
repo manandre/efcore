@@ -1,4 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System.Collections.Immutable;
@@ -546,6 +546,12 @@ public abstract class NorthwindAggregateOperatorsQueryTestBase<TFixture>(TFixtur
 
     private static int ClientEvalSelectorStateless()
         => 42;
+
+    [ConditionalTheory, MemberData(nameof(IsAsyncData))]
+    public virtual Task DistinctBy(bool async)
+        => AssertQuery(
+            async,
+            ss => ss.Set<Customer>().DistinctBy(c => c.City));
 
     [ConditionalTheory, MemberData(nameof(IsAsyncData))]
     public virtual Task Distinct(bool async)

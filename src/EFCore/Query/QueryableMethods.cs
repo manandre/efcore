@@ -87,6 +87,11 @@ public static class QueryableMethods
     //public static MethodInfo DistinctWithComparer { get; }
 
     /// <summary>
+    ///     The <see cref="MethodInfo" /> for <see cref="Queryable.DistinctBy{TSource,TKey}(IQueryable{TSource},Expression{Func{TSource,TKey}})" />
+    /// </summary>
+    public static MethodInfo DistinctBy { get; }
+
+    /// <summary>
     ///     The <see cref="MethodInfo" /> for <see cref="Queryable.ElementAt{TSource}(IQueryable{TSource}, int)" />
     /// </summary>
     public static MethodInfo ElementAt { get; }
@@ -523,6 +528,13 @@ public static class QueryableMethods
             types => [typeof(IQueryable<>).MakeGenericType(types[0]), types[0]]);
 
         Distinct = GetMethod(nameof(Queryable.Distinct), 1, types => [typeof(IQueryable<>).MakeGenericType(types[0])]);
+
+        DistinctBy = GetMethod(nameof(Queryable.DistinctBy), 2,
+            types =>
+            [
+                typeof(IQueryable<>).MakeGenericType(types[0]),
+                typeof(Expression<>).MakeGenericType(typeof(Func<,>).MakeGenericType(types[0], types[1]))
+            ]);
 
         ElementAt = GetMethod(
             nameof(Queryable.ElementAt), 1,

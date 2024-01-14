@@ -314,6 +314,31 @@ public class InMemoryQueryableMethodTranslatingExpressionVisitor : QueryableMeth
     ///     any release. You should only use it directly in your code with extreme caution and knowing that
     ///     doing so can result in application failures when updating to a new Entity Framework Core release.
     /// </summary>
+    protected override ShapedQueryExpression? TranslateDistinctBy(
+        ShapedQueryExpression source,
+        LambdaExpression keySelector)
+    {
+        var sourceParameter = keySelector.Parameters[0];
+        var keyParameter = Expression.Parameter(keySelector.ReturnType);
+        var sourceQueryableType = typeof(IQueryable<>).MakeGenericType(sourceParameter.Type);
+        var queryableParameter = Expression.Parameter(sourceQueryableType);
+
+        var castMethod = QueryableMethods.AsQueryable.MakeGenericMethod(sourceParameter.Type);
+        var castExpression = Expression.Call(castMethod, queryableParameter);
+
+        var firstMethod = QueryableMethods.FirstWithoutPredicate.MakeGenericMethod(sourceParameter.Type);
+        var firstExpression = Expression.Call(firstMethod, castExpression);
+        var firstSelector = Expression.Lambda(firstExpression, keyParameter, queryableParameter);
+
+        return TranslateGroupBy(source, keySelector, null, firstSelector);
+    }
+
+    /// <summary>
+    ///     This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+    ///     the same compatibility standards as public APIs. It may be changed or removed without notice in
+    ///     any release. You should only use it directly in your code with extreme caution and knowing that
+    ///     doing so can result in application failures when updating to a new Entity Framework Core release.
+    /// </summary>
     protected override ShapedQueryExpression? TranslateElementAtOrDefault(
         ShapedQueryExpression source,
         Expression index,
